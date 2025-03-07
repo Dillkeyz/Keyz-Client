@@ -18,8 +18,8 @@ auth_tokens = None
 sign_out_button = None  # Global sign-out button (None when not signed in)
 
 def azure_authenticate():
-    CLIENT_ID = "e9662c65-b293-425d-bc6e-953440070365"  # Your Azure app ID
-    TENANT_ID = "2e0ab107-6bbb-4d2c-ba24-15d2d3702e31"
+    CLIENT_ID = "nq2xi15TqTPKBxrcuLEoQUyLLQp+ALITv7vufS9AykNdBlnXgM5qAzPc+DPxxxzT"  # Will not work will need original code to run or put in your own client id/tenat
+    TENANT_ID = "OF6gcaRrnT/GfJKEPLYq9lONlo6gt9knL5QQw7OW++8DYHjgstVujHer14mz8eyG"
     AUTHORITY = "https://login.microsoftonline.com/consumers"  # Consider using "common" if needed
     redirect_uri="http://localhost:8080//callback"  # This should match the registered URI
     SCOPE = ["XboxLive.signin"]
