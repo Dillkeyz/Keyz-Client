@@ -1,0 +1,147 @@
+import minecraft_launcher_lib as mc
+import subprocess
+import customtkinter as ctk
+import json
+import os
+from PIL import Image  # Import Image from PIL
+
+
+# Get Minecraft directory
+minecraft_directory = mc.utils.get_minecraft_directory()
+all_ver_info = mc.utils.get_available_versions(minecraft_directory)
+
+# Define available versions
+versions = ["1.16.1", "1.21", "1.21.4", "1.8.9"]
+
+# File to save user settings
+USER_DATA_FILE = "user_data.json"
+
+def save_settings(username, dark_mode, last_version):
+    with open(USER_DATA_FILE, "w") as f:
+        json.dump({"username": username, "dark_mode": dark_mode, "last_version": last_version}, f)
+
+def load_settings():
+    if os.path.exists(USER_DATA_FILE):
+        with open(USER_DATA_FILE, "r") as f:
+            data = json.load(f)
+            return data.get("username", ""), data.get("dark_mode", False), data.get("last_version", versions[0])
+    return "", False, versions[0]
+
+def get_installed_versions():
+    return [ver["id"] for ver in mc.utils.get_installed_versions(minecraft_directory)]
+
+def install_version():
+    selected_version = version_var.get()
+    install_button.configure(text="Installing", state="disabled")
+    mc.install.install_minecraft_version(selected_version, minecraft_directory)
+    install_button.configure(text="Done", state="normal")
+    dropdown.configure(state="disabled")
+    check_installed()
+
+def check_installed():
+    selected_version = version_var.get()
+    installed_versions = get_installed_versions()
+    if selected_version in installed_versions:
+        install_button.configure(text="Play", command=launch_version)
+    else:
+        install_button.configure(text="Install", command=install_version)
+
+def launch_version():
+    username = username_var.get()
+    selected_version = version_var.get()
+    save_settings(username, dark_mode_var.get(), selected_version)
+    setting = {
+        "username": username,
+        "uuid": "8cfc2dba-8344-495c-999d-d27eb554020a",
+        "token": "token",
+    }
+    minecraft_command = mc.command.get_minecraft_command(selected_version, minecraft_directory, setting)
+    root.destroy()
+    subprocess.run(minecraft_command)
+    main()  # Relaunch GUI after game closes
+
+def toggle_dark_mode():
+    current_mode = dark_mode_var.get()
+    if current_mode:
+        ctk.set_appearance_mode("light")
+        dark_mode_button.configure(text="D")
+    else:
+        ctk.set_appearance_mode("dark")
+        dark_mode_button.configure(text="L")
+    dark_mode_var.set(not current_mode)
+    save_settings(username_var.get(), dark_mode_var.get(), version_var.get())
+
+def main():
+    global root, version_var, install_button, dropdown, username_var, dark_mode_var, dark_mode_button
+
+    ctk.set_default_color_theme("green")
+    
+    root = ctk.CTk()
+    root.title("Dillkeyz Client")
+    root.geometry("800x500")
+    root.resizable(False, False)
+
+    # Load settings
+    saved_username, saved_dark_mode, saved_version = load_settings()
+    
+    username_var = ctk.StringVar(value=saved_username)
+    version_var = ctk.StringVar(value=saved_version)
+    dark_mode_var = ctk.BooleanVar(value=saved_dark_mode)
+    
+    # Apply saved dark mode setting
+    if saved_dark_mode:
+        ctk.set_appearance_mode("dark")
+        dark_mode_button_text = "L"
+    else:
+        ctk.set_appearance_mode("light")
+        dark_mode_button_text = "D"
+
+    # Left background panel
+    left_panel = ctk.CTkFrame(root, width=400, height=500, fg_color="transparent")
+    left_panel.place(relx=0, rely=0, anchor="nw")
+
+    # Left background panel (Wider: 400px)
+    left_panel = ctk.CTkFrame(root, width=400, height=500, fg_color="transparent")
+    left_panel.place(relx=0, rely=0, anchor="nw")
+
+    # Load and display image in the left panel (Centered)
+    original_image = Image.open("Client\Config\Logs\Assets\Leftbg.png")  # Replace with your actual image file
+    image = ctk.CTkImage(light_image=original_image, size=original_image.size)  # Keeps original size
+    image_label = ctk.CTkLabel(left_panel, image=image, text="")  
+    image_label.place(relx=0.5, rely=0.5, anchor="center")  # Centered
+
+    # Title Label (Left Side)
+    title_label = ctk.CTkLabel(root, text="Dillkeyz Client", font=("Arial", 30, "bold"), fg_color="transparent", bg_color="transparent")
+    title_label.place(relx=0.7, rely=0.2, anchor="center")  # Adjusted position inside left_panel
+
+    username_label = ctk.CTkLabel(root, text="Enter A Username:", padx=5, pady=5, fg_color="transparent")
+    username_label.place(relx=0.7, rely=0.37, anchor="center")  # Moved right
+
+    username_entry = ctk.CTkEntry(root, textvariable=username_var)
+    username_entry.place(relx=0.7, rely=0.43, anchor="center")  # Moved right
+
+
+    # Dark Mode Button
+    dark_mode_button = ctk.CTkButton(
+        root, text=dark_mode_button_text, command=toggle_dark_mode,
+        width=50, height=50, font=("Arial", 20)
+    )
+    dark_mode_button.place(relx=0.95, rely=0.07, anchor="center")
+
+    # Version Title
+    version_label = ctk.CTkLabel(root, text="Select Version:", padx=5, pady=5)
+    version_label.place(relx=0.7, rely=0.54, anchor="center")
+
+    # Version Dropdown
+    dropdown = ctk.CTkComboBox(root, variable=version_var, values=versions, state="readonly")  
+    dropdown.place(relx=0.7, rely=0.6, anchor="center")
+
+    # Install Button
+    install_button = ctk.CTkButton(root, text="Install", command=install_version, font=("Arial", 20, "bold"), height=50)
+    install_button.place(relx=0.7, rely=0.73, anchor="center")
+
+    check_installed()
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
